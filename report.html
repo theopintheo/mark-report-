@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Grade Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .message-box {
+            max-height: 500px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .grade-A { background-color: #4CAF50 !important; }
+        .grade-B { background-color: #8BC34A !important; }
+        .grade-C { background-color: #FFC107 !important; }
+        .grade-D { background-color: #FF9800 !important; }
+        .grade-F { background-color: #F44336 !important; }
+        .grade-badge {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .student-card {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- App Header -->
+            <div class="bg-indigo-600 text-white p-4">
+                <h1 class="text-2xl font-bold">📋 Student Grade Tracker</h1>
+                <p class="text-indigo-100">Track and manage student grades</p>
+            </div>
+
+            <!-- Input Form -->
+            <div class="p-4 border-b">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2" for="studentCount">
+                        Number of Students
+                    </label>
+                    <input type="number" id="studentCount" min="1" class="w-full px-3 py-2 border rounded">
+                </div>
+                <div id="studentForms"></div>
+                <button id="generateReportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50 mt-4" disabled>
+                    Generate Report
+                </button>
+            </div>
+
+            <!-- Message Box Display -->
+            <div class="p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-semibold">Student Reports</h2>
+                    <button id="clearAllBtn" class="text-red-500 hover:text-red-700">Clear All</button>
+                </div>
+                <div id="messageBox" class="message-box space-y-3">
+                    <div class="text-center p-4 text-gray-500" id="emptyMessage">
+                        No student data yet. Add students above to see reports.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const studentCountInput = document.getElementById('studentCount');
+            const studentFormsContainer = document.getElementById('studentForms');
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            const messageBox = document.getElementById('messageBox');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const emptyMessage = document.getElementById('emptyMessage');
+            
+            let studentForms = [];
+            let studentsData = [];
+
+            // Generate student input forms based on count
+            studentCountInput.addEventListener('input', function() {
+                const count = parseInt(this.value);
+                if (isNaN(count) || count < 1) {
+                    studentFormsContainer.innerHTML = '';
+                    studentForms = [];
+                    generateReportBtn.disabled = true;
+                    return;
+                }
+
+                studentFormsContainer.innerHTML = '';
+                studentForms = [];
+                
+                for (let i = 0; i < count; i++) {
+                    const formDiv = document.createElement('div');
+                    formDiv.className = 'mb-6 p-4 border rounded';
+                    formDiv.innerHTML = `
+                        <h3 class="font-semibold mb-3">Student ${i+1}</h3>
+                        <div class="mb-3">
+                            <label class="block text-gray-700 mb-1">Name</label>
+                            <input type="text" class="student-name w-full px-3 py-2 border rounded" required>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-gray-700 mb-1">Mark 1</label>
+                                <input type="number" min="0" max="100" class="student-mark w-full px-3 py-2 border rounded" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">Mark 2</label>
+                                <input type="number" min="0" max="100" class="student-mark w-full px-3 py-2 border rounded" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">Mark 3</label>
+                                <input type="number" min="0" max="100" class="student-mark w-full px-3 py-2 border rounded" required>
+                            </div>
+                        </div>
+                    `;
+                    studentForms.push(formDiv);
+                    studentFormsContainer.appendChild(formDiv);
+                }
+
+                generateReportBtn.disabled = false;
+            });
+
+            // Generate report
+            generateReportBtn.addEventListener('click', function() {
+                studentsData = [];
+                
+                studentForms.forEach(form => {
+                    const nameInput = form.querySelector('.student-name');
+                    const markInputs = form.querySelectorAll('.student-mark');
+                    
+                    const name = nameInput.value.trim();
+                    const marks = Array.from(markInputs).map(input => {
+                        const value = parseInt(input.value);
+                        return isNaN(value) ? 0 : Math.max(0, Math.min(100, value));
+                    });
+                    
+                    const total = marks.reduce((sum, mark) => sum + mark, 0);
+                    const average = total / 3;
+                    
+                    let grade;
+                    if (average >= 90) grade = 'A';
+                    else if (average >= 75) grade = 'B';
+                    else if (average >= 60) grade = 'C';
+                    else if (average >= 50) grade = 'D';
+                    else grade = 'F';
+                    
+                    studentsData.push({
+                        name,
+                        marks,
+                        total,
+                        average: Math.round(average * 100) / 100,
+                        grade
+                    });
+                });
+
+                emptyMessage.style.display = 'none';
+                messageBox.innerHTML = '';
+                
+                studentsData.forEach(student => {
+                    const card = document.createElement('div');
+                    card.className = 'student-card bg-white rounded-lg shadow p-4';
+                    
+                    const gradeClass = `grade-${student.grade}`;
+                    
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-semibold">${student.name}</h3>
+                            <span class="grade-badge ${gradeClass}">${student.grade}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <div>
+                                <label class="text-sm text-gray-500">Mark 1</label>
+                                <div class="font-medium">${student.marks[0]}</div>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-500">Mark 2</label>
+                                <div class="font-medium">${student.marks[1]}</div>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-500">Mark 3</label>
+                                <div class="font-medium">${student.marks[2]}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-sm text-gray-500">Total</label>
+                                <div class="font-medium">${student.total}</div>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-500">Average</label>
+                                <div class="font-medium">${student.average}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    messageBox.appendChild(card);
+                });
+            });
+
+            // Clear all reports
+            clearAllBtn.addEventListener('click', function() {
+                messageBox.innerHTML = '';
+                emptyMessage.style.display = 'block';
+                studentsData = [];
+            });
+        });
+    </script>
+</body>
+</html>
